@@ -1,0 +1,35 @@
+# Dependencies
+**/node_modules/
+
+# Next.js
+**/.next/
+**/out/
+
+# Backend output (generated MP3)
+backend/output/
+
+# Electron builder output
+frontend/release/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/venv/
+**/.venv/
+**/env/
+**/.env
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+*.pem
+*.tsbuildinfo
+*.blockmap
+.env*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
