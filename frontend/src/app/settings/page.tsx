@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 const APP_VERSION = "0.1.0";
-const GITHUB_URL = "https://github.com/anomalyco/Voxify";
+const GITHUB_URL = "https://github.com/926117017/Voxify";
 
 export default function SettingsPage() {
   const router = useRouter();
