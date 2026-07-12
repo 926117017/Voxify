@@ -90,11 +90,12 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [defaultVoice, setDefaultVoice] = useState<string | null>(null);
   const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
+  const [hajimi, setHajimi] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const lastGenRef = useRef({ text: "", voice: "", rate: "+0%", volume: "+0%", pitch: "+0Hz" });
+  const lastGenRef = useRef({ text: "", voice: "", rate: "+0%", volume: "+0%", pitch: "+0Hz", hajimi: false });
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -160,7 +161,7 @@ export default function Home() {
     const rateStr = `${rate >= 0 ? "+" : ""}${rate}%`;
     const volumeStr = `${volume >= 0 ? "+" : ""}${volume}%`;
     const pitchStr = `${pitch >= 0 ? "+" : ""}${pitch}Hz`;
-    lastGenRef.current = { text, voice: selectedVoice, rate: rateStr, volume: volumeStr, pitch: pitchStr };
+    lastGenRef.current = { text, voice: selectedVoice, rate: rateStr, volume: volumeStr, pitch: pitchStr, hajimi };
     try {
       const result = await submitGeneration({
         text,
@@ -168,6 +169,7 @@ export default function Home() {
         rate: rateStr,
         volume: volumeStr,
         pitch: pitchStr,
+        hajimi,
       });
       setTaskStatus({
         status: "running",
@@ -537,6 +539,18 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+
+            <button
+              onClick={() => setHajimi(!hajimi)}
+              className={`w-full h-11 rounded-xl border text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                hajimi
+                  ? "bg-pink-500/15 border-pink-400/40 text-pink-400"
+                  : "bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
+            >
+              <span className="text-base">🎀</span>
+              哈吉咪 <span className="font-mono text-xs">{hajimi ? "ON" : "OFF"}</span>
+            </button>
 
             <motion.div
               whileHover={text.trim() && !generating ? { scale: 1.01 } : undefined}

@@ -25,6 +25,7 @@ class GenerateRequest(BaseModel):
     rate: str = Field(default="+0%")
     volume: str = Field(default="+0%")
     pitch: str = Field(default="+0Hz")
+    hajimi: bool = Field(default=False, description="Apply Hajimi voice effect")
 
 
 @router.post("/generate")
@@ -182,6 +183,11 @@ async def _run_generation(task_id: str, req: GenerateRequest):
 
         await _merge_audio(valid_files, str(output_file))
 
+        if req.hajimi:
+            hajimi_file = output_dir / f"hajimi_{task_id}.mp3"
+            await _apply_hajimi(str(output_file), str(hajimi_file))
+            os.replace(str(hajimi_file), str(output_file))
+
         task["status"] = "completed"
         task["download_url"] = f"/download/{task_id}.mp3"
         task["_ts"] = time.time()
@@ -236,6 +242,31 @@ def _find_ffmpeg() -> str:
         if resolved:
             return resolved
     raise FileNotFoundError("FFmpeg not found")
+
+
+async def _apply_hajimi(input_path: str, output_path: str):
+    """Apply Hajimi voice effect: pitch shift up ~7 semitones."""
+    ffmpeg_path = _find_ffmpeg()
+    proc = await asyncio.create_subprocess_exec(
+        ffmpeg_path,
+        "-i", input_path,
+        "-af", "rubberband=pitch=1.5",
+        "-y", output_path,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        _, stderr = await asyncio.wait_for(
+            proc.communicate(), timeout=60
+        )
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        raise RuntimeError("FFmpeg Hajimi processing timed out")
+
+    if proc.returncode != 0:
+        msg = stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"FFmpeg Hajimi error: {msg}")
 
 
 async def _merge_audio(file_list: list[str], output_path: str):

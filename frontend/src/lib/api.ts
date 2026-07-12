@@ -36,6 +36,7 @@ export async function submitGeneration(params: {
   rate: string;
   volume: string;
   pitch: string;
+  hajimi?: boolean;
 }): Promise<GenerateResponse> {
   const res = await fetch(`${API_BASE}/generate`, {
     method: "POST",
