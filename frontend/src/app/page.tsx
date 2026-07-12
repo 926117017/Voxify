@@ -43,6 +43,7 @@ const LOCALE_MAP: Record<string, string> = {
   "zh-CN": "普通话",
   "zh-HK": "粤语",
   "zh-TW": "台湾国语",
+  "zh-HJ": "哈吉咪",
 };
 
 function estimateSegments(text: string): number {
@@ -90,12 +91,11 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [defaultVoice, setDefaultVoice] = useState<string | null>(null);
   const [previewPlaying, setPreviewPlaying] = useState<string | null>(null);
-  const [hajimi, setHajimi] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const lastGenRef = useRef({ text: "", voice: "", rate: "+0%", volume: "+0%", pitch: "+0Hz", hajimi: false });
+  const lastGenRef = useRef({ text: "", voice: "", voiceName: "", rate: "+0%", volume: "+0%", pitch: "+0Hz", hajimi: false });
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -123,12 +123,11 @@ export default function Home() {
           if (status.download_url) {
             const url = `${API_BASE}${status.download_url}`;
             setAudioUrl(url);
-            const v = voices.find((vi) => vi.name === lastGenRef.current.voice);
             const entry: HistoryEntry = {
               id: taskId,
               text: lastGenRef.current.text,
               voice: lastGenRef.current.voice,
-              voiceName: v?.chinese_name || lastGenRef.current.voice,
+              voiceName: lastGenRef.current.voiceName,
               rate: lastGenRef.current.rate,
               volume: lastGenRef.current.volume,
               pitch: lastGenRef.current.pitch,
@@ -161,15 +160,18 @@ export default function Home() {
     const rateStr = `${rate >= 0 ? "+" : ""}${rate}%`;
     const volumeStr = `${volume >= 0 ? "+" : ""}${volume}%`;
     const pitchStr = `${pitch >= 0 ? "+" : ""}${pitch}Hz`;
-    lastGenRef.current = { text, voice: selectedVoice, rate: rateStr, volume: volumeStr, pitch: pitchStr, hajimi };
+    const isHajimi = selectedVoice === "hajimi";
+    const realVoice = isHajimi ? "zh-CN-XiaoyiNeural" : selectedVoice;
+    const displayVoiceName = isHajimi ? "哈吉咪" : (voices.find((v) => v.name === selectedVoice)?.chinese_name || selectedVoice);
+    lastGenRef.current = { text, voice: realVoice, voiceName: displayVoiceName, rate: rateStr, volume: volumeStr, pitch: pitchStr, hajimi: isHajimi };
     try {
       const result = await submitGeneration({
         text,
-        voice: selectedVoice,
+        voice: realVoice,
         rate: rateStr,
         volume: volumeStr,
         pitch: pitchStr,
-        hajimi,
+        hajimi: isHajimi,
       });
       setTaskStatus({
         status: "running",
@@ -220,7 +222,8 @@ export default function Home() {
       return;
     }
     previewAudioRef.current?.pause();
-    const shortName = voiceName.replace(/^(zh-CN|zh-HK|zh-TW)-/, "").replace(/Neural$/i, "").toLowerCase();
+    const baseName = voiceName === "hajimi" ? "zh-CN-XiaoyiNeural" : voiceName;
+    const shortName = baseName.replace(/^(zh-CN|zh-HK|zh-TW)-/, "").replace(/Neural$/i, "").toLowerCase();
     const audio = new Audio(`/edge-voices/${shortName}.mp3`);
     audio.onended = () => setPreviewPlaying(null);
     audio.onerror = () => setPreviewPlaying(null);
@@ -302,7 +305,7 @@ export default function Home() {
               />
             </div>
             <div className="flex gap-2">
-              {["all", ...languages].slice(0, 4).map((lang) => (
+              {["all", ...languages].map((lang) => (
                 <button
                   key={lang}
                   onClick={() => setLanguageFilter(lang === languageFilter ? "all" : lang)}
@@ -539,18 +542,6 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-
-            <button
-              onClick={() => setHajimi(!hajimi)}
-              className={`w-full h-11 rounded-xl border text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                hajimi
-                  ? "bg-pink-500/15 border-pink-400/40 text-pink-400"
-                  : "bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span className="text-base">🎀</span>
-              哈吉咪 <span className="font-mono text-xs">{hajimi ? "ON" : "OFF"}</span>
-            </button>
 
             <motion.div
               whileHover={text.trim() && !generating ? { scale: 1.01 } : undefined}

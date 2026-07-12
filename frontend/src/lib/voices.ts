@@ -127,4 +127,13 @@ export const HARDCODED_VOICES: Voice[] = [
     chinese_name: "晓雨",
     personality: "清新",
   },
+  {
+    name: "hajimi",
+    display_name: "Hajimi",
+    locale: "zh-HJ",
+    gender: "Female",
+    language: "zh-HJ",
+    chinese_name: "哈吉咪",
+    personality: "萌音",
+  },
 ];
